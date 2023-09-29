@@ -5,25 +5,74 @@ date: "2023-09-19"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning= FALSE, messagem=FALSE)
 ```
 
-## R Markdown
+# Imports
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+#install.packages("tidyverse")
+#install.packages("janitor")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+library(tidyverse)
+library(janitor)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+df <- read_csv("../data/train.csv")
+```
+
+# Data Cleaning
+
+```{r}
+df1 <- janitor::clean_names(df)
+glimpse(df1)
+```
+
+## Data Types
+
+```{r}
+str(df1)
+```
+
+```{r}
+variable_classes <- tibble(variables = names(df1), types = unlist(lapply(df1, class)))
+                                                     
+```
+
+```{r}
+df2 <- df1 %>%
+  rename(days_associated = vintage, health_annual_paid = annual_premium) %>%
+  mutate(
+    across(where(is.character), tolower),
+    driving_license = ifelse(driving_license == 1, "yes", "no"),
+    previously_insured = ifelse(previously_insured == 1, "yes", "no"),
+    response = ifelse(response == 1, "yes", "no"),
+    vehicle_age = case_when(
+      vehicle_age == "< 1 year" ~ "below_1_year",
+      vehicle_age == "1-2 year" ~ "between_1_2_years",
+      vehicle_age == "> 2 years" ~ "over_2_years"
+    )
+  ) %>%
+  mutate_if(is.character, as.factor)
+```
+
+```{r}
+glimpse(df2)
+```
+
+```{r}
+# Tornando o 'yes' da variavel resposta como primeiro nível do factor
+df2$response %>% levels()
+
+df2$response <- factor(df2$response, levels = c("yes", "no"))
+```
+
+```{r}
+#save df2 as rds
+saveRDS(df2, "df2_cleaned.rds")
+```
+
+`{class)))}`
